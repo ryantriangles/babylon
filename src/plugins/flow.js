@@ -1049,7 +1049,7 @@ export default function (instance) {
   });
 
   // parse type parameters for class methods
-  instance.extend("parseClassMethod", function () {
+  instance.extend("parseClassMethod", function (inner) {
     return function (classBody, method, isGenerator, isAsync) {
       if (method.variance) {
         this.unexpected(method.variancePos);
@@ -1059,8 +1059,7 @@ export default function (instance) {
       if (this.isRelational("<")) {
         method.typeParameters = this.flowParseTypeParameterDeclaration();
       }
-      this.parseMethod(method, isGenerator, isAsync);
-      classBody.body.push(this.finishNode(method, "ClassMethod"));
+      inner.call(this, classBody, method, isGenerator, isAsync);
     };
   });
 
