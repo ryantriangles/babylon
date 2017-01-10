@@ -463,7 +463,11 @@ pp.parseBlock = function (allowDirectives?) {
   return this.finishNode(node, "BlockStatement");
 };
 
-// TODO
+pp.isValidDirective = function (stmt) {
+  return stmt.type === "ExpressionStatement" &&
+    stmt.expression.type === "StringLiteral" &&
+    !stmt.expression.extra.parenthesized;
+};
 
 pp.parseBlockBody = function (node, allowDirectives, topLevel, end) {
   node.body = [];
@@ -480,9 +484,7 @@ pp.parseBlockBody = function (node, allowDirectives, topLevel, end) {
 
     let stmt = this.parseStatement(true, topLevel);
 
-    if (allowDirectives && !parsedNonDirective &&
-        stmt.type === "ExpressionStatement" && stmt.expression.type === "StringLiteral" &&
-        !stmt.expression.extra.parenthesized) {
+    if (allowDirectives && !parsedNonDirective && this.isValidDirective(stmt)) {
       let directive = this.stmtToDirective(stmt);
       node.directives.push(directive);
 
@@ -709,8 +711,8 @@ pp.parseClassBody = function (node) {
 
       // disallow invalid constructors
       let isConstructor = !isConstructorCall && !method.static && (
-        (key.type === "Identifier" && key.name === "constructor") ||
-        (key.type === "StringLiteral" && key.value === "constructor")
+        (key.name === "constructor") || // Identifier
+        (key.value === "constructor")   // Literal
       );
       if (isConstructor) {
         if (hadConstructor) this.raise(key.start, "Duplicate constructor in the same class");
@@ -723,8 +725,8 @@ pp.parseClassBody = function (node) {
 
       // disallow static prototype method
       let isStaticPrototype = method.static && (
-        (key.type === "Identifier" && key.name === "prototype") ||
-        (key.type === "StringLiteral" && key.value === "prototype")
+        (key.name === "prototype") || // Identifier
+        (key.value === "prototype")   // Literal
       );
       if (isStaticPrototype) {
         this.raise(key.start, "Classes may not have static property named prototype");
